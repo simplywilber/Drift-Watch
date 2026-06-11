@@ -22,7 +22,8 @@ import com.driftwatch.analytics.ui.DriftWatchViewModel
 // Purpose:
 // Main dashboard screen for DriftWatch.
 // Displays current atmospheric conditions,
-// latest symptom entry, and navigation controls.
+// latest symptom entry, weather sync controls,
+// and navigation controls.
 
 @Composable
 fun HomeScreen(
@@ -66,8 +67,8 @@ fun HomeScreen(
 
                     val latest = readings.first()
 
-                    Text("Pressure: ${latest.barometricPressure}")
-                    Text("Temperature: ${latest.ambientTemperature}")
+                    Text("Pressure: ${latest.barometricPressure} hPa")
+                    Text("Temperature: ${latest.ambientTemperature}°F")
 
                     Text(
                         if (latest.isDriftEvent)
@@ -109,6 +110,20 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                viewModel.triggerApiSyncFallback(
+                    latitude = 47.6062,
+                    longitude = -122.3321,
+                    apiKey = "5aef96ff3906cb812803c51549707542"
+                )
+            }
+        ) {
+            Text("Fetch Weather")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {

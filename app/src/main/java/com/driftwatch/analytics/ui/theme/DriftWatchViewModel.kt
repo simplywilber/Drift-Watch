@@ -51,7 +51,26 @@ class DriftWatchViewModel(
             repository.saveSymptomLog(newSymptom)
         }
     }
+    // Added by Yevgeniy Mazur
+// Purpose:
+// Triggers a weather API sync using a fixed location.
+// Used to validate Retrofit, Room, and Repository integration.
 
+    fun triggerApiSyncFallback(
+        latitude: Double,
+        longitude: Double,
+        apiKey: String
+    ) {
+
+        viewModelScope.launch {
+
+            repository.syncAtmosphericData(
+                latitude = latitude,
+                longitude = longitude,
+                apiKey = apiKey
+            )
+        }
+    }
     // Factory pattern to securely instantiate our ViewModel
     // with repository requirements.
     class Factory(
