@@ -15,7 +15,9 @@ class DriftWatchApplication : Application() {
             this,
             AppDatabase::class.java,
             "driftwatch_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     // Instantiates the central repository, injecting the database DAO and Retrofit engine

@@ -4,6 +4,7 @@ import com.driftwatch.analytics.data.local.DriftWatchDao
 import com.driftwatch.analytics.data.local.EnvironmentalReadingEntity
 import com.driftwatch.analytics.data.local.SymptomLogEntity
 import com.driftwatch.analytics.data.remote.WeatherApiService
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 
 // Created by Wilber Amaya-Maurisio
@@ -18,23 +19,22 @@ class DriftWatchRepository(
         dao.insertSymptom(symptom)
     }
 
-    suspend fun syncAtmosphericData(latitude: Double, longitude: Double, apiKey: String): Result<Unit> {
-        return try {
-            val response = apiService.fetchLocalConditions(latitude, longitude, apiKey)
+    suspend fun syncAtmosphericData(latitude: Double, longitude: Double, apiKey: String) {
+        Log.d("DriftWatchRepo", "Fetching weather for lat=$latitude, lon=$longitude")
+        val response = apiService.fetchLocalConditions(latitude, longitude, apiKey)
+        Log.d("DriftWatchRepo", "API Response: $response")
 
-            val isDriftDetected = response.main.pressure < 1013.25 && response.main.temp > 25.0
+        // Using metric units for original logic: pressure < 1013.25 hPa and temp > 25 C
+        val isDriftDetected = response.main.pressure < 1013.25 && response.main.temp > 25.0
 
-            val reading = EnvironmentalReadingEntity(
-                timestamp = response.dt * 1000,
-                barometricPressure = response.main.pressure,
-                ambientTemperature = response.main.temp,
-                isDriftEvent = isDriftDetected
-            )
+        val reading = EnvironmentalReadingEntity(
+            timestamp = response.dt * 1000,
+            barometricPressure = response.main.pressure,
+            ambientTemperature = response.main.temp,
+            isDriftEvent = isDriftDetected
+        )
 
-            dao.insertReading(reading)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        dao.insertReading(reading)
+        Log.d("DriftWatchRepo", "Inserted reading into database")
     }
 }

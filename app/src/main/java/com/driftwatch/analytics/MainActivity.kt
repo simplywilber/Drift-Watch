@@ -3,45 +3,43 @@ package com.driftwatch.analytics
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.driftwatch.analytics.ui.DriftWatchViewModel
+import com.driftwatch.analytics.ui.navigation.AppNavigation
 import com.driftwatch.analytics.ui.theme.DriftWatchAnalyticsTheme
 
+// Added by Yevgeniy Mazur
+// Purpose:
+// Connects the Compose UI layer to the existing repository architecture.
+// Collects StateFlow data from the ViewModel and passes it into
+// the Navigation system while preserving the repository pattern
+// created by Wilber Amaya-Maurisio.
+
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: DriftWatchViewModel by viewModels {
+        DriftWatchViewModel.Factory(
+            (application as DriftWatchApplication).repository
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
         setContent {
+
+            val readings by viewModel.environmentalReadings.collectAsStateWithLifecycle()
+            val symptoms by viewModel.symptomLogs.collectAsStateWithLifecycle()
+
             DriftWatchAnalyticsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppNavigation(
+                    viewModel = viewModel,
+                    readings = readings,
+                    symptoms = symptoms
+                )
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DriftWatchAnalyticsTheme {
-        Greeting("Android")
     }
 }
