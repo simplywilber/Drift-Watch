@@ -9,14 +9,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.driftwatch.analytics.ui.DriftWatchViewModel
 import com.driftwatch.analytics.ui.navigation.AppNavigation
 import com.driftwatch.analytics.ui.theme.DriftWatchAnalyticsTheme
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
-// Added by Yevgeniy Mazur
-// Purpose:
-// Connects the Compose UI layer to the existing repository architecture.
-// Collects StateFlow data from the ViewModel and passes it into
-// the Navigation system while preserving the repository pattern
-// created by Wilber Amaya-Maurisio.
-
+// Added by Yevgeniy Mazur & Edited by Wilber Amaya-Maurisio
+// Purpose: Architecture bridge connecting the Compose UI layer to the local repository.
+// Responsibilities: Collects underlying StateFlow metrics, orchestrates screen routing parameters,
+// and ensures decoupled data integrity across the Navigation lifecycle.
 class MainActivity : ComponentActivity() {
 
     private val viewModel: DriftWatchViewModel by viewModels {
@@ -26,6 +24,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // Custom splash screen added by Wilber Amaya-MAurisio
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         setContent {

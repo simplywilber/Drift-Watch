@@ -70,4 +70,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation(libs.androidx.navigation.compose)
-}
+    // Splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")}
