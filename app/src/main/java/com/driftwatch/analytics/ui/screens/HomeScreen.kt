@@ -17,8 +17,10 @@ import androidx.navigation.NavController
 import com.driftwatch.analytics.data.local.EnvironmentalReadingEntity
 import com.driftwatch.analytics.data.local.SymptomLogEntity
 import com.driftwatch.analytics.ui.DriftWatchViewModel
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
-// Added by Yevgeniy Mazur
+// Added by Yevgeniy Mazur and Edited by Wilber Amaya-Maurisio
 // Purpose:
 // Main dashboard screen for DriftWatch.
 // Displays current atmospheric conditions,
@@ -36,13 +38,23 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(20.dp)
             .statusBarsPadding()
     ) {
-
+        // App Header Section Area
         Text(
-            text = "DriftWatch",
-            style = MaterialTheme.typography.headlineMedium
+            text = "DRIFTWATCH",
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Black,
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary,
+            letterSpacing = 1.5.sp
+        )
+        Text(
+            text = "Environmental Analytics Dashboard",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 24.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
