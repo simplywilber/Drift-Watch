@@ -3,7 +3,7 @@
     <style name="Theme.DriftWatchAnalytics" parent="android:Theme.Material.Light.NoActionBar">
     </style>
 
-// Edited by Wilber Amaya-Maurisio
+<!-- Edited by Wilber Amaya-Maurisio -->
     <style name="Theme.DriftWatchAnalytics.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_app_logo</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_app_logo</item>

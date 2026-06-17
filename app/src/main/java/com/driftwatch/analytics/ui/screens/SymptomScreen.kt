@@ -1,6 +1,5 @@
 package com.driftwatch.analytics.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -58,6 +57,9 @@ fun SymptomScreen(
     var customSymptom by remember { mutableStateOf("") }
     var userNotes by remember { mutableStateOf("") }
     var showValidationDialog by remember { mutableStateOf(false) }
+    // Added by Giecel Tumbaga: Created recommendation pop-up
+    var showRecommendationDialog by remember { mutableStateOf(false) }
+    var recommendations by remember { mutableStateOf(listOf<String>()) }
 
     // --- Rotary State for Severity ---
     val severityListState = rememberLazyListState(initialFirstVisibleItemIndex = 0)
@@ -130,6 +132,42 @@ fun SymptomScreen(
 
     val isFormValid = validationMessage == null
 
+    // Added by: Giecel Tumbaga
+    // Created the recommendation pop up letting the user know ways to relieve
+    // their symptoms based on their severity level and what was chosen.
+    fun generateRecommendations(classifications: Set<String>, severity: Int): List<String> {
+        val tips = mutableListOf<String>()
+        
+        if (classifications.contains("Migraine")) {
+            tips.add("Rest in a quiet, dark room to reduce sensory overload.")
+            tips.add("Stay hydrated and avoid known dietary triggers.")
+        }
+        if (classifications.contains("Respiratory")) {
+            tips.add("Avoid outdoor activity if air quality is poor.")
+            tips.add("Keep your rescue inhaler nearby if prescribed.")
+        }
+        if (classifications.contains("Pain")) {
+            tips.add("Apply a warm or cold compress to the affected area.")
+            tips.add("Try gentle stretching or light movement if tolerable.")
+        }
+        if (classifications.contains("Skin")) {
+            tips.add("Avoid scratching the affected area to prevent infection.")
+            tips.add("Use a cool compress or fragrance-free moisturizer.")
+        }
+        if (classifications.contains("Digestive")) {
+            tips.add("Sip clear fluids to maintain hydration.")
+            tips.add("Stick to bland foods like bananas, rice, or toast (BRAT diet).")
+        }
+        
+        if (severity >= 7) {
+            tips.add("Your severity level is high. Please consult a healthcare professional if symptoms persist or worsen.")
+        } else if (tips.isEmpty()) {
+            tips.add("Monitor your symptoms and rest as needed.")
+        }
+        
+        return tips
+    }
+
     val severity by remember {
         derivedStateOf {
             val layoutInfo = severityListState.layoutInfo
@@ -165,6 +203,47 @@ fun SymptomScreen(
             },
             title = { Text("Missing Information") },
             text = { Text(validationMessage ?: "") }
+        )
+    }
+
+    // Added by Giecel Tumbaga
+    // Recommendation Pop-up
+    if (showRecommendationDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showRecommendationDialog = false
+                navController.navigate("home")
+            },
+            confirmButton = {
+                Button(
+                    onClick = { 
+                        showRecommendationDialog = false
+                        navController.navigate("home")
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Got it, thanks!")
+                }
+            },
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("💡 Recommended Actions", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Based on your $severity/10 log, here are some suggestions to help you feel better:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    recommendations.forEach { tip ->
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Text("• ", fontWeight = FontWeight.Bold)
+                            Text(tip, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
         )
     }
 
@@ -246,6 +325,9 @@ fun SymptomScreen(
                                     selectedClassifications.joinToString(" + ")
                                 }
 
+                            val recs = generateRecommendations(selectedClassifications, severity)
+                            recommendations = recs
+
                             viewModel.logUserSymptom(
                                 id = editingSymptomId,
                                 type = classificationName.ifBlank { "Unspecified" },
@@ -258,7 +340,9 @@ fun SymptomScreen(
                                 customSymptomText = customSymptom,
                                 userNotes = userNotes
                             )
-                            navController.navigate("home")
+
+                            // to show the recommendation pop up after logging symptoms
+                            showRecommendationDialog = true
                         }
                     },
                     modifier = Modifier
