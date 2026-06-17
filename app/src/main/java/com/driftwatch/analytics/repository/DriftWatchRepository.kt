@@ -19,6 +19,10 @@ class DriftWatchRepository(
         dao.insertSymptom(symptom)
     }
 
+    suspend fun getSymptomById(id: Long): SymptomLogEntity? {
+        return dao.getSymptomById(id)
+    }
+
     suspend fun syncAtmosphericData(latitude: Double, longitude: Double, apiKey: String) {
         Log.d("DriftWatchRepo", "Fetching weather for lat=$latitude, lon=$longitude")
         val response = apiService.fetchLocalConditions(latitude, longitude, apiKey)

@@ -6,14 +6,18 @@ import androidx.lifecycle.viewModelScope
 import com.driftwatch.analytics.data.local.EnvironmentalReadingEntity
 import com.driftwatch.analytics.data.local.SymptomLogEntity
 import com.driftwatch.analytics.repository.DriftWatchRepository
+import com.driftwatch.analytics.utils.LocationTracker
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 // Created by Wilber Amaya-Maurisio
 class DriftWatchViewModel(
-    private val repository: DriftWatchRepository
+    private val repository: DriftWatchRepository,
+    private val locationTracker: LocationTracker
 ) : ViewModel() {
 
     // Converts cold database streams into hot, lifecycle aware UI state arrays
@@ -31,50 +35,109 @@ class DriftWatchViewModel(
             initialValue = emptyList()
         )
 
-    // Triggers safe background insertion for a user symptom card
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing = _isSyncing.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
+
+    // Triggers safe background insertion or update for a user symptom card
     fun logUserSymptom(
+        id: Long = 0,
         type: String,
         severity: Int,
-        notes: String
+        notes: String,
+        rawClassifications: String = "",
+        rawSubOptions: String = "",
+        rawBodyParts: String = "",
+        rawBowelTypes: String = "",
+        customSymptomText: String = "",
+        userNotes: String = ""
     ) {
         viewModelScope.launch {
 
-            val currentTimestamp = System.currentTimeMillis()
+            val latestReading = environmentalReadings.value.firstOrNull()
+            
+            // If editing, preserve the original timestamp and environmental data if possible
+            val existing = if (id != 0L) repository.getSymptomById(id) else null
 
             val newSymptom = SymptomLogEntity(
-                timestamp = currentTimestamp,
+                id = id,
+                timestamp = existing?.timestamp ?: System.currentTimeMillis(),
                 symptomType = type,
                 severityLevel = severity,
-                notes = notes
+                notes = notes,
+                associatedPressure = existing?.associatedPressure ?: latestReading?.barometricPressure,
+                associatedTemperature = existing?.associatedTemperature ?: latestReading?.ambientTemperature,
+                associatedDriftEvent = existing?.associatedDriftEvent ?: latestReading?.isDriftEvent,
+                rawClassifications = rawClassifications,
+                rawSubOptions = rawSubOptions,
+                rawBodyParts = rawBodyParts,
+                rawBowelTypes = rawBowelTypes,
+                customSymptomText = customSymptomText,
+                userNotes = userNotes
             )
 
             repository.saveSymptomLog(newSymptom)
         }
     }
-    // Added by Yevgeniy Mazur
-// Purpose:
-// Triggers a weather API sync using a fixed location.
-// Used to validate Retrofit, Room, and Repository integration.
 
+    suspend fun getSymptomById(id: Long): SymptomLogEntity? {
+        return repository.getSymptomById(id)
+    }
+
+    // Added by Yevgeniy Mazur: Triggers weather sync with loading state
     fun triggerApiSyncFallback(
         latitude: Double,
         longitude: Double,
         apiKey: String
     ) {
-
         viewModelScope.launch {
-
-            repository.syncAtmosphericData(
-                latitude = latitude,
-                longitude = longitude,
-                apiKey = apiKey
-            )
+            _isSyncing.value = true
+            _errorMessage.value = null
+            try {
+                repository.syncAtmosphericData(
+                    latitude = latitude,
+                    longitude = longitude,
+                    apiKey = apiKey
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Sync Failed: ${e.message}"
+            } finally {
+                _isSyncing.value = false
+            }
         }
     }
+
+    // Added by Yevgeniy Mazur: GPS-based sync
+    fun triggerApiSyncWithGps(apiKey: String) {
+        viewModelScope.launch {
+            _isSyncing.value = true
+            _errorMessage.value = null
+            try {
+                val location = locationTracker.getCurrentLocation()
+                if (location != null) {
+                    repository.syncAtmosphericData(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        apiKey = apiKey
+                    )
+                } else {
+                    _errorMessage.value = "GPS Location Unavailable"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "GPS Sync Failed: ${e.message}"
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
     // Factory pattern to securely instantiate our ViewModel
     // with repository requirements.
     class Factory(
-        private val repository: DriftWatchRepository
+        private val repository: DriftWatchRepository,
+        private val locationTracker: LocationTracker
     ) : ViewModelProvider.Factory {
 
         @Suppress("UNCHECKED_CAST")
@@ -83,7 +146,7 @@ class DriftWatchViewModel(
         ): T {
 
             if (modelClass.isAssignableFrom(DriftWatchViewModel::class.java)) {
-                return DriftWatchViewModel(repository) as T
+                return DriftWatchViewModel(repository, locationTracker) as T
             }
 
             throw IllegalArgumentException("Unknown ViewModel class")

@@ -1,9 +1,11 @@
 package com.driftwatch.analytics.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.driftwatch.analytics.data.local.EnvironmentalReadingEntity
 import com.driftwatch.analytics.data.local.SymptomLogEntity
 import com.driftwatch.analytics.ui.DriftWatchViewModel
@@ -43,6 +45,18 @@ fun AppNavigation(
             SymptomScreen(
                 navController = navController,
                 viewModel = viewModel
+            )
+        }
+
+        composable(
+            route = "edit_symptom/{symptomId}",
+            arguments = listOf(navArgument("symptomId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val symptomId = backStackEntry.arguments?.getLong("symptomId") ?: -1L
+            SymptomScreen(
+                navController = navController,
+                viewModel = viewModel,
+                editingSymptomId = symptomId
             )
         }
 

@@ -21,4 +21,7 @@ interface DriftWatchDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSymptom(symptom: SymptomLogEntity)
+
+    @Query("SELECT * FROM symptom_logs WHERE id = :id")
+    suspend fun getSymptomById(id: Long): SymptomLogEntity?
 }

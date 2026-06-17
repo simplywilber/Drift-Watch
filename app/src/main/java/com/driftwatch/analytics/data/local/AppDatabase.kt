@@ -6,7 +6,7 @@ import androidx.room.RoomDatabase
 // Created by Wilber Amaya-Maurisio
 @Database(
     entities = [EnvironmentalReadingEntity::class, SymptomLogEntity::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

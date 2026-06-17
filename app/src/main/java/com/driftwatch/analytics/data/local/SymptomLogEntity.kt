@@ -11,5 +11,16 @@ data class SymptomLogEntity(
     val timestamp: Long,
     val symptomType: String,
     val severityLevel: Int,
-    val notes: String
+    val notes: String,
+    // Added fields to store environmental conditions at the time of logging
+    val associatedPressure: Double? = null,
+    val associatedTemperature: Double? = null,
+    val associatedDriftEvent: Boolean? = null,
+    // Raw diagnostic data for editing (Added by Yevgeniy Mazur)
+    val rawClassifications: String = "",
+    val rawSubOptions: String = "",
+    val rawBodyParts: String = "",
+    val rawBowelTypes: String = "",
+    val customSymptomText: String = "",
+    val userNotes: String = ""
 )

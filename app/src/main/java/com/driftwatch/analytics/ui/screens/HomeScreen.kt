@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,12 +16,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,6 +48,10 @@ fun HomeScreen(
     readings: List<EnvironmentalReadingEntity>,
     symptoms: List<SymptomLogEntity>
 ) {
+    // Added by Yevgeniy Mazur: Tracking sync status for auto-updates
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,24 +59,25 @@ fun HomeScreen(
             .statusBarsPadding()
     ) {
         // App Header Section Area
-        // Styling added by Wilber Amaya-MAurisio
         Text(
             text = "DRIFTWATCH",
             fontSize = 32.sp,
             fontWeight = FontWeight.Black,
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.primary,
-            letterSpacing = 1.5.sp
+            letterSpacing = 1.5.sp,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
         )
         Text(
             text = "Environmental Analytics Dashboard",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+            textAlign = TextAlign.Center
         )
 
         // Current Conditions Metric Card
-        // Styling added by Wilber Amaya-MAurisio
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,11 +97,19 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (readings.isEmpty()) {
-                    Text(
-                        text = "No environmental readings cached locally.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (isSyncing) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Initializing first sync...")
+                        }
+                    } else {
+                        Text(
+                            text = "No environmental readings cached locally.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 } else {
                     val latest = readings.first()
 
@@ -143,7 +161,6 @@ fun HomeScreen(
         }
 
         // Symptom Track Card
-        // Styling added by Wilber Amaya-Maurisio
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -193,25 +210,43 @@ fun HomeScreen(
         }
 
         // Synchronization Button Control
-        // Styling added by Wilber Amaya-Maurisio
+        // Added by Yevgeniy Mazur: Loading state for sync button
         Button(
             onClick = {
-                viewModel.triggerApiSyncFallback(
-                    latitude = 47.6062,
-                    longitude = -122.3321,
-                    apiKey = "5aef96ff3906cb812803c51549707542"
-                )
+                viewModel.triggerApiSyncWithGps("5aef96ff3906cb812803c51549707542")
             },
+            enabled = !isSyncing,
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Sync Live Weather Telemetry", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            if (isSyncing) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Syncing Live Telemetry...", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Text("Sync Live Weather Telemetry", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            }
+        }
+
+        errorMessage?.let {
+            Text(
+                text = it,
+                color = Color.Red,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         // Navigation Action Bar Group
-        // Styling added by Wilber Amaya-Maurisio
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
